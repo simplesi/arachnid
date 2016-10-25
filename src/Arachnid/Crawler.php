@@ -3,7 +3,7 @@
 namespace Arachnid;
 
 use Goutte\Client as GoutteClient;
-use Guzzle\Http\Exception\CurlException;
+use GuzzleHttp\Exception\ClientException;
 use Symfony\Component\DomCrawler\Crawler as DomCrawler;
 
 /**
@@ -118,7 +118,7 @@ class Crawler
                     $this->traverseChildren($childLinks, $depth - 1);
                 }
             }
-        } catch (CurlException $e) {
+        } catch (ClientException $e) {
             $this->links[$url]['status_code'] = '404';
             $this->links[$url]['error_code'] = $e->getCode();
             $this->links[$url]['error_message'] = $e->getMessage();
@@ -160,6 +160,7 @@ class Crawler
             return;
         }
 
+
         foreach ($childLinks as $url => $info) {
             $hash = $this->getPathFromUrl($url);
 
@@ -196,6 +197,17 @@ class Crawler
         $crawler->filter('a')->each(function (DomCrawler $node, $i) use (&$childLinks) {
             $node_text = trim($node->text());
             $node_url = $node->attr('href');
+
+            // Ensure we're tracking an absolute url
+            if (preg_match("@^http(s)?@", $node_url) !== 1) {
+                if (strpos($node_url, '/') === 0) {
+                    $parsed_url = parse_url($this->baseUrl);
+                    $node_url = $parsed_url['scheme'] . '://' . $parsed_url['host'] . $node_url;
+                } else {
+                    $node_url = substr($this->baseUrl, 0, strrpos($this->baseUrl, '/')) . '/' . $node_url;
+                }
+            }
+
             $node_url_is_crawlable = $this->checkIfCrawlable($node_url);
             $hash = $this->normalizeLink($node_url);
 
@@ -204,18 +216,8 @@ class Crawler
                 $childLinks[$hash]['links_text'][$node_text] = $node_text;
 
                 if ($node_url_is_crawlable === true) {
-                    // Ensure URL is formatted as absolute
 
-                    if (preg_match("@^http(s)?@", $node_url) !== 1) {
-                        if (strpos($node_url, '/') === 0) {
-                            $parsed_url = parse_url($this->baseUrl);
-                            $childLinks[$hash]['absolute_url'] = $parsed_url['scheme'] . '://' . $parsed_url['host'] . $node_url;
-                        } else {
-                            $childLinks[$hash]['absolute_url'] = substr($this->baseUrl, 0, strrpos( $this->baseUrl, '/')) . '/' . $node_url;
-                        }
-                    } else {
-                        $childLinks[$hash]['absolute_url'] = $node_url;
-                    }
+                    $childLinks[$hash]['absolute_url'] = $node_url;
 
                     // Is this an external URL?
                     $childLinks[$hash]['external_link'] = $this->checkIfExternal($childLinks[$hash]['absolute_url']);
