@@ -9,7 +9,7 @@ if (count($argv) > 1) {
 }
 
 // Initiate crawl
-$crawler = new \Arachnid\Crawler($baseUrl, $depth);
+$crawler = new \Arachnid\Crawler([$baseUrl],$baseUrl, $depth);
 $crawler->traverse();
 
 // Get link data

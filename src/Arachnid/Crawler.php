@@ -3,7 +3,9 @@
 namespace Arachnid;
 
 use Goutte\Client as GoutteClient;
-use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\BadResponseException;
+use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\TooManyRedirectsException;
 use Symfony\Component\DomCrawler\Crawler as DomCrawler;
 
 /**
@@ -28,54 +30,44 @@ use Symfony\Component\DomCrawler\Crawler as DomCrawler;
 class Crawler
 {
     /**
-     * The base URL from which the crawler begins crawling
+     * The set of urls we're planning on visiting
+     * @var UrlQueue
+     */
+    protected $urlStore;
+
+    /**
+     * Only crawl urls within this url path
      * @var string
      */
     protected $baseUrl;
 
-    /**
-     * The max depth the crawler will crawl
-     * @var int
-     */
-    protected $maxDepth;
-
-    /**
-     * Array of links (and related data) found by the crawler
-     * @var array
-     */
-    protected $links;
 
     /**
      * Constructor
-     * @param string $baseUrl
+     * @param array $initialUrls
      * @param int    $maxDepth
      */
-    public function __construct($baseUrl, $maxDepth = 3)
+    public function __construct(array $initialUrls, $baseUrl, $maxDepth = 3)
     {
+        $this->urlStore = new UrlQueue($maxDepth);
+        foreach($initialUrls as $url)
+        {
+            $this->urlStore->add($url, 1);
+        }
+
+        $this->resultStore = new ResultStore();
         $this->baseUrl = $baseUrl;
-        $this->maxDepth = $maxDepth;
-        $this->links = array();
     }
 
     /**
      * Initiate the crawl
      * @param string $url
      */
-    public function traverse($url = null)
+    public function traverse()
     {
-        if ($url === null) {
-            $url = $this->baseUrl;
-            $this->links[$url] = array(
-                'links_text' => array('BASE_URL'),
-                'absolute_url' => $url,
-                'frequency' => 1,
-                'visited' => false,
-                'external_link' => false,
-                'original_urls' => array($url)
-            );
+        while(!$this->urlStore->isEmpty()){
+            $this->traverseSingle($this->urlStore->next());
         }
-
-        $this->traverseSingle($url, $this->maxDepth);
     }
 
     /**
@@ -84,49 +76,51 @@ class Crawler
      */
     public function getLinks()
     {
-        return $this->links;
+        return $this->resultStore->getResults();
     }
 
     /**
      * Crawl single URL
-     * @param string $url
-     * @param int    $depth
+     * @param UrlWithData $urlWithData
      */
-    protected function traverseSingle($url, $depth)
+    protected function traverseSingle(UrlWithData $urlWithData)
     {
+        $url = $urlWithData->getUrl();
+
         try {
             $client = $this->getScrapClient();
-
             $crawler = $client->request('GET', $url);
-            $statusCode = $client->getResponse()->getStatus();
 
-            $hash = $this->getPathFromUrl($url);
-            $this->links[$hash]['status_code'] = $statusCode;
+            $statusCode = $client->getResponse()->getStatus();
+            $this->resultStore->recordForUrl($url, 'status_code', $statusCode);
 
             if ($statusCode === 200) {
                 $content_type = $client->getResponse()->getHeader('Content-Type');
 
-                if (strpos($content_type, 'text/html') !== false) { //traverse children in case the response in HTML document only
-                    $this->extractTitleInfo($crawler, $hash);
+                if (strpos($content_type,'text/html') !== false
+                ) { //traverse children in case the response in HTML document only
 
-                    $childLinks = array();
-                    if (isset($this->links[$hash]['external_link']) === true && $this->links[$hash]['external_link'] === false) {
-                        $childLinks = $this->extractLinksInfo($crawler, $hash);
+                    if ($this->shouldExtractLinksInUri($url)) {
+                        $childLinks = $this->extractLinksInfo($crawler, $url);
+                        $this->urlStore->addMultiple($childLinks, $urlWithData->getDepth() + 1);
                     }
-
-                    $this->links[$hash]['visited'] = true;
-                    $this->traverseChildren($childLinks, $depth - 1);
+                    $this->analysePage($crawler, $url);
                 }
             }
-        } catch (ClientException $e) {
-            $this->links[$url]['status_code'] = '404';
-            $this->links[$url]['error_code'] = $e->getCode();
-            $this->links[$url]['error_message'] = $e->getMessage();
-        } catch (\Exception $e) {
-            $this->links[$url]['status_code'] = '404';
-            $this->links[$url]['error_code'] = $e->getCode();
-            $this->links[$url]['error_message'] = $e->getMessage();
+        } catch (ConnectException $e){
+            $this->resultStore->recordError($url, 'Connection', $e->getMessage());
+
+        } catch (BadResponseException $e) {
+            $this->resultStore->recordError($url, $e->getResponse()->getStatusCode(), $e->getMessage());
+
+        } catch (TooManyRedirectsException $e) {
+            $this->resultStore->recordError($url, 'TooManyRedirects', $e->getMessage());
         }
+    }
+
+    protected function shouldExtractLinksInUri($uri)
+    {
+        return !$this->checkIfExternal($uri);
     }
 
     /**
@@ -142,47 +136,12 @@ class Crawler
             'curl' => array(
                 CURLOPT_SSL_VERIFYHOST => false,
                 CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_TIMEOUT => 30
             ),
         ));
         $client->setClient($guzzleClient);
 
         return $client;
-    }
-
-    /**
-     * Crawl child links
-     * @param array $childLinks
-     * @param int   $depth
-     */
-    protected function traverseChildren($childLinks, $depth)
-    {
-        if ($depth === 0) {
-            return;
-        }
-
-
-        foreach ($childLinks as $url => $info) {
-            $hash = $this->getPathFromUrl($url);
-
-            if (isset($this->links[$hash]) === false) {
-                $this->links[$hash] = $info;
-            } else {
-                $this->links[$hash]['original_urls'] = isset($this->links[$hash]['original_urls']) ? array_merge($this->links[$hash]['original_urls'], $info['original_urls']) : $info['original_urls'];
-                $this->links[$hash]['links_text'] = isset($this->links[$hash]['links_text']) ? array_merge($this->links[$hash]['links_text'], $info['links_text']) : $info['links_text'];
-                if (isset($this->links[$hash]['visited']) === true && $this->links[$hash]['visited'] === true) {
-                    $oldFrequency = isset($info['frequency']) ? $info['frequency'] : 0;
-                    $this->links[$hash]['frequency'] = isset($this->links[$hash]['frequency']) ? $this->links[$hash]['frequency'] + $oldFrequency : 1;
-                }
-            }
-
-            if (isset($this->links[$hash]['visited']) === false) {
-                $this->links[$hash]['visited'] = false;
-            }
-
-            if (empty($url) === false && $this->links[$hash]['visited'] === false && isset($this->links[$hash]['dont_visit']) === false) {
-                $this->traverseSingle($this->normalizeLink($childLinks[$url]['absolute_url']), $depth);
-            }
-        }
     }
 
     /**
@@ -194,101 +153,57 @@ class Crawler
     protected function extractLinksInfo(DomCrawler $crawler, $url)
     {
         $childLinks = array();
-        $crawler->filter('a')->each(function (DomCrawler $node, $i) use (&$childLinks) {
-            $node_text = trim($node->text());
+        $crawler->filter('a')->each(function (DomCrawler $node, $i) use (&$childLinks, $url) {
+
             $node_url = $node->attr('href');
 
-            // Ensure we're tracking an absolute url
+            // Ensure we get an absolute url
             if (preg_match("@^http(s)?@", $node_url) !== 1) {
                 if (strpos($node_url, '/') === 0) {
-                    $parsed_url = parse_url($this->baseUrl);
+                    $parsed_url = parse_url($url);
                     $node_url = $parsed_url['scheme'] . '://' . $parsed_url['host'] . $node_url;
                 } else {
-                    $node_url = substr($this->baseUrl, 0, strrpos($this->baseUrl, '/')) . '/' . $node_url;
+                    $node_url = substr($url, 0, strrpos($url, '/')) . '/' . $node_url;
                 }
             }
 
-            $node_url_is_crawlable = $this->checkIfCrawlable($node_url);
-            $hash = $this->normalizeLink($node_url);
+            // TODO: Do something with the url text?
+            //$node_text = trim($node->text());
 
-            if (isset($this->links[$hash]) === false) {
-                $childLinks[$hash]['original_urls'][$node_url] = $node_url;
-                $childLinks[$hash]['links_text'][$node_text] = $node_text;
+            $childLinks[] = $node_url;
 
-                if ($node_url_is_crawlable === true) {
-
-                    $childLinks[$hash]['absolute_url'] = $node_url;
-
-                    // Is this an external URL?
-                    $childLinks[$hash]['external_link'] = $this->checkIfExternal($childLinks[$hash]['absolute_url']);
-
-                    // Additional metadata
-                    $childLinks[$hash]['visited'] = false;
-                    $childLinks[$hash]['frequency'] = isset($childLinks[$hash]['frequency']) ? $childLinks[$hash]['frequency'] + 1 : 1;
-                } else {
-                    $childLinks[$hash]['dont_visit'] = true;
-                    $childLinks[$hash]['external_link'] = false;
-                }
-            }
         });
-
-        // Avoid cyclic loops with pages that link to themselves
-        if (isset($childLinks[$url]) === true) {
-            $childLinks[$url]['visited'] = true;
-        }
 
         return $childLinks;
     }
 
     /**
-     * Extract title information from url
+     * Extract information from page content
      * @param \Symfony\Component\DomCrawler\Crawler $crawler
      * @param string                                $url
      */
-    protected function extractTitleInfo(DomCrawler $crawler, $url)
+    protected function analysePage(DomCrawler $crawler, $url)
     {
-        $crawler->filterXPath('//head//title')->each(function (DomCrawler $node) use ($url) {
-            $this->links[$url]['title'] = trim($node->text());
+        $data = [];
+
+        // TITLE
+        $crawler->filterXPath('//head//title')->each(function (DomCrawler $node) use ($url, $data) {
+            $data['title'] = trim($node->text());
         });
 
 
+        // H1s
         $h1_count = $crawler->filter('h1')->count();
-        $this->links[$url]['h1_count'] = $h1_count;
-        $this->links[$url]['h1_contents'] = array();
+        $data['h1_count'] = $h1_count;
+        $data['h1_contents'] = array();
 
         if ($h1_count > 0) {
             $crawler->filter('h1')->each(function (DomCrawler $node, $i) use ($url) {
-                $this->links[$url]['h1_contents'][$i] = trim($node->text());
+                $data['h1_contents'][$i] = trim($node->text());
             });
         }
-    }
 
-    /**
-     * Is a given URL crawlable?
-     * @param  string $uri
-     * @return bool
-     */
-    protected function checkIfCrawlable($uri)
-    {
-        if (empty($uri) === true) {
-            return false;
-        }
-
-        $stop_links = array(
-            '@^javascript\:.*$@i',
-            '@^#.*@',
-            '@^mailto\:.*@i',
-            '@^tel\:.*@i',
-            '@^fax\:.*@i',
-        );
-
-        foreach ($stop_links as $ptrn) {
-            if (preg_match($ptrn, $uri) === 1) {
-                return false;
-            }
-        }
-
-        return true;
+        $this->resultStore->recordForUrlArray($url, $data);
     }
 
     /**
@@ -305,27 +220,4 @@ class Crawler
         return preg_match("@http(s)?\://$base_url_trimmed@", $url) !== 1;
     }
 
-    /**
-     * Normalize link (remove hash, etc.)
-     * @param  string $url
-     * @return string
-     */
-    protected function normalizeLink($uri)
-    {
-        return preg_replace('@#.*$@', '', $uri);
-    }
-
-    /**
-     * extrating the relative path from url string
-     * @param  type $url
-     * @return type
-     */
-    protected function getPathFromUrl($url)
-    {
-        if (strpos($url, $this->baseUrl) === 0 && $url !== $this->baseUrl) {
-            return str_replace($this->baseUrl, '', $url);
-        } else {
-            return $url;
-        }
-    }
 }
