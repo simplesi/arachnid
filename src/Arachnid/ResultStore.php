@@ -3,6 +3,8 @@
 
 namespace Arachnid;
 
+use Arachnid\DataStore\DataStore;
+
 /**
  * Class ResultStore
  * @package Arachnid
@@ -12,6 +14,23 @@ namespace Arachnid;
 class ResultStore
 {
     protected $data = [];
+
+    /**
+     * @var DataStore
+     */
+    protected $longTermStore = null;
+
+    /**
+     * ResultStore constructor.
+     * @param DataStore|null $longTermDataStore
+     */
+    public function __construct($longTermDataStore = null, $crawlId)
+    {
+        if ($longTermDataStore !== null) {
+            $this->longTermStore = $longTermDataStore;
+            $this->longTermStore->init($crawlId);
+        }
+    }
 
 
     public function recordForUrl($url, $key, $value)
@@ -44,6 +63,17 @@ class ResultStore
                 'error_message' => $message
             ];
         $this->recordForUrlArray($url, $payload);
+    }
+
+
+    public function markUrlComplete($url)
+    {
+        if ($this->longTermStore !== null)
+        {
+            $this->longTermStore->writeToStore($url, $this->data[$url]);
+        }
+
+        // TODO: clean up the local store?
     }
 
     public function getResults()

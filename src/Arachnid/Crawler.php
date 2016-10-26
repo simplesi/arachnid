@@ -2,6 +2,7 @@
 
 namespace Arachnid;
 
+use Arachnid\DataStore\DataStore;
 use Goutte\Client as GoutteClient;
 use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Exception\ConnectException;
@@ -41,32 +42,42 @@ class Crawler
      */
     protected $baseUrl;
 
+    /**
+     * Unique ID for this crawl
+     * @var string
+     */
+    protected $crawlId;
 
     /**
      * Constructor
      * @param array $initialUrls
+     * @param string $baseUrl
      * @param int    $maxDepth
+     * @param DataStore $dataStore
      */
-    public function __construct(array $initialUrls, $baseUrl, $maxDepth = 3)
+    public function __construct(array $initialUrls, $baseUrl, $maxDepth = 3, $dataStore = null)
     {
+        // Generate an ID for this crawl
+        $date = new \DateTime();
+        $this->crawlId = $date->format(\DateTime::ISO8601);
+
         $this->urlStore = new UrlQueue($maxDepth);
         foreach($initialUrls as $url)
         {
             $this->urlStore->add($url, 1);
         }
 
-        $this->resultStore = new ResultStore();
+        $this->resultStore = new ResultStore($dataStore, $this->crawlId);
         $this->baseUrl = $baseUrl;
     }
 
     /**
-     * Initiate the crawl
-     * @param string $url
+     * Run the crawl
      */
-    public function traverse()
+    public function crawl()
     {
         while(!$this->urlStore->isEmpty()){
-            $this->traverseSingle($this->urlStore->next());
+            $this->crawlSingle($this->urlStore->next());
         }
     }
 
@@ -83,7 +94,7 @@ class Crawler
      * Crawl single URL
      * @param UrlWithData $urlWithData
      */
-    protected function traverseSingle(UrlWithData $urlWithData)
+    protected function crawlSingle(UrlWithData $urlWithData)
     {
         $url = $urlWithData->getUrl();
 
@@ -116,6 +127,8 @@ class Crawler
         } catch (TooManyRedirectsException $e) {
             $this->resultStore->recordError($url, 'TooManyRedirects', $e->getMessage());
         }
+
+        $this->resultStore->markUrlComplete($url);
     }
 
     protected function shouldExtractLinksInUri($uri)
