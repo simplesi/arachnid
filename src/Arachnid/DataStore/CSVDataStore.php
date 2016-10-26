@@ -6,7 +6,6 @@ namespace Arachnid\DataStore;
 
 class CSVDataStore implements DataStore
 {
-
     /**
      * @var resource
      */
@@ -15,14 +14,15 @@ class CSVDataStore implements DataStore
     protected $path;
     protected $knownColumns = [];
 
-    public function __construct($path, $knownColumns)
+    public function __construct($path)
     {
         $this->path = $path;
-        $this->knownColumns = $knownColumns;
     }
 
-    public function init($crawlId)
+    public function init($crawlId, $knownColumns)
     {
+        $this->knownColumns = $knownColumns;
+
         $filename = "{$this->path}/{$crawlId}.csv";
         $this->filePointer = fopen($filename, 'w');
 

@@ -24,11 +24,11 @@ class ResultStore
      * ResultStore constructor.
      * @param DataStore|null $longTermDataStore
      */
-    public function __construct($longTermDataStore = null, $crawlId)
+    public function __construct($longTermDataStore = null, $crawlId, $resultColumns)
     {
         if ($longTermDataStore !== null) {
             $this->longTermStore = $longTermDataStore;
-            $this->longTermStore->init($crawlId);
+            $this->longTermStore->init($crawlId, $resultColumns);
         }
     }
 

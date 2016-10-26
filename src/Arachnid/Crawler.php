@@ -48,6 +48,11 @@ class Crawler
      */
     protected $crawlId;
 
+    /*
+     *
+     */
+    protected $analysers;
+
     /**
      * Constructor
      * @param array $initialUrls
@@ -55,7 +60,7 @@ class Crawler
      * @param int    $maxDepth
      * @param DataStore $dataStore
      */
-    public function __construct(array $initialUrls, $baseUrl, $maxDepth = 3, $dataStore = null)
+    public function __construct(array $initialUrls, $baseUrl, $maxDepth = 3, $dataStore = null, $analysers = [])
     {
         // Generate an ID for this crawl
         $date = new \DateTime();
@@ -67,8 +72,12 @@ class Crawler
             $this->urlStore->add($url, 1);
         }
 
-        $this->resultStore = new ResultStore($dataStore, $this->crawlId);
+
+        $this->analysers = $analysers;
+
+        $this->resultStore = new ResultStore($dataStore, $this->crawlId, $this->getResultColumns());
         $this->baseUrl = $baseUrl;
+
     }
 
     /**
@@ -198,25 +207,23 @@ class Crawler
     protected function analysePage(DomCrawler $crawler, $url)
     {
         $data = [];
-
-        // TITLE
-        $crawler->filterXPath('//head//title')->each(function (DomCrawler $node) use ($url, $data) {
-            $data['title'] = trim($node->text());
-        });
-
-
-        // H1s
-        $h1_count = $crawler->filter('h1')->count();
-        $data['h1_count'] = $h1_count;
-        $data['h1_contents'] = array();
-
-        if ($h1_count > 0) {
-            $crawler->filter('h1')->each(function (DomCrawler $node, $i) use ($url) {
-                $data['h1_contents'][$i] = trim($node->text());
-            });
+        foreach ($this->analysers as $analyser)
+        {
+            $data = array_merge($data, $analyser->analyse($crawler, $url));
         }
 
         $this->resultStore->recordForUrlArray($url, $data);
+    }
+
+    protected function getResultColumns()
+    {
+        $columns = ['url', 'status_code'];
+
+        foreach($this->analysers as $analyser) {
+            foreach($analyser->getResultKeys() as $key)
+            $columns[] = $key;
+        }
+        return $columns;
     }
 
     /**

@@ -1,5 +1,7 @@
 <?php
 
+use Arachnid\ContentAnalysis\OnPage\ExtractHtmlMetadata;
+
 include __DIR__.'/../vendor/autoload.php';
 
 $baseUrl = $argv[1];
@@ -10,11 +12,16 @@ if (count($argv) > 1) {
     $depth = 3;
 }
 
-$knownColumns = ['url', 'status_code', 'h1_count', 'h1_contents'];
-$dataStore = new \Arachnid\DataStore\CSVDataStore( __DIR__.'/../data/',$knownColumns);
+$dataStore = new \Arachnid\DataStore\CSVDataStore( __DIR__.'/../data/');
+
+$analysers = [
+    new ExtractHtmlMetadata(),
+    new \Arachnid\ContentAnalysis\OnPage\TextAnalysis(),
+    new \Arachnid\ContentAnalysis\OnPage\ContentCounts()
+];
 
 // Initiate crawl
-$crawler = new \Arachnid\Crawler([$baseUrl],$baseUrl, $depth, $dataStore);
+$crawler = new \Arachnid\Crawler([$baseUrl],$baseUrl, $depth, $dataStore, $analysers);
 $crawler->crawl();
 
 // Get link data
