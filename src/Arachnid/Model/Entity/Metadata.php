@@ -6,13 +6,13 @@ namespace Arachnid\Model\Entity;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * Class Metric
+ * Class Metadata
  * @package Arachnid\Model\Entity
  *
- * @ORM\Table(name="metrics")
+ * @ORM\Table(name="metadata")
  * @ORM\Entity
  */
-class Metric
+class Metadata
 {
     /**
      * @var integer
@@ -30,13 +30,13 @@ class Metric
 
     /**
      * @var Page
-     * @ORM\ManyToOne(targetEntity="Page", inversedBy="metrics")
+     * @ORM\ManyToOne(targetEntity="Page", inversedBy="metadata")
      * @ORM\JoinColumn(name="page_id", referencedColumnName="id", onDelete="CASCADE")
      */
     private $page;
 
     /**
-     * @ORM\Column(type="float")
+     * @ORM\Column(type="string", length=1024)
      */
     private $value;
 
@@ -62,7 +62,7 @@ class Metric
     }
 
     /**
-     * @return float
+     * @return string
      */
     public function getValue()
     {

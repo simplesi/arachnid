@@ -41,10 +41,24 @@ class Page
      */
     protected $metricMap = [];
 
+
+    /**
+     * @ORM\OneToMany(targetEntity="Metadata", mappedBy="page")
+     */
+    protected $metadata;
+
+    /**
+     * Cache of metricName => metric to ensure uniqueness
+     * @var array
+     */
+    protected $metadataMap = [];
+
+
     public function __construct($url)
     {
         $this->url = $url;
         $this->metrics = new ArrayCollection();
+        $this->metadata = new ArrayCollection();
     }
 
     /**
@@ -91,6 +105,49 @@ class Page
     }
 
     /**
+     * @param $name
+     * @param $value
+     */
+    protected function addMetadata($name, $value, EntityManager $em)
+    {
+        if (count($this->metadata) != count($this->metadataMap))
+        {
+            $this->buildMetadataMap();
+        }
+
+        // First remove any existing metrics with this name
+        if (array_key_exists($name,$this->metadataMap)){
+            $toRemove = $this->metadataMap[$name];
+            $this->metadata->removeElement($toRemove);
+            $em->remove($toRemove);
+        }
+
+        $toAdd = new Metadata($name, $value, $this);
+        $em->persist($toAdd);
+        $this->metadata->add($toAdd);
+        $this->metadataMap[$name] = $toAdd;
+    }
+
+    /**
+     * @param $data
+     */
+    public function addMetadatas($data, EntityManager $em)
+    {
+        foreach($data as $name => $value)
+        {
+            $this->addMetadata($name, $value, $em);
+        }
+    }
+
+    protected function buildMetadataMap()
+    {
+        foreach($this->metadata as $metadata)
+        {
+            $this->metadataMap[$metadata->getType()] = $metadata;
+        }
+    }
+
+    /**
      * @return mixed
      */
     public function getUrl()
@@ -99,11 +156,19 @@ class Page
     }
 
     /**
-     * @return mixed
+     * @return array
      */
     public function getMetrics()
     {
         return $this->metrics;
+    }
+
+    /**
+     * @return array
+     */
+    public function getMetadata()
+    {
+        return $this->metadata;
     }
 
 }

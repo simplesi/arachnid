@@ -4,15 +4,17 @@ use Arachnid\ContentAnalysis\OnPage\ExtractHtmlMetadata;
 
 include __DIR__.'/../vendor/autoload.php';
 
+$appConfig = new \Arachnid\AppConfig();
+
 $baseUrl = $argv[1];
 
-if (count($argv) > 1) {
+if (isset($argv[2]) > 1) {
     $depth = $argv[2];
 } else {
     $depth = 3;
 }
 
-$dataStore = new \Arachnid\DataStore\CSVDataStore( __DIR__.'/../data/');
+$dataStore = new \Arachnid\DataStore\ORMDataStore($appConfig->getEntityManager());
 
 $analysers = [
     new ExtractHtmlMetadata(),
