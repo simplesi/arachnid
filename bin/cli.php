@@ -5,11 +5,13 @@ use Symfony\Component\Console\Helper\HelperSet,
     Doctrine\DBAL\Tools\Console\Helper\ConnectionHelper,
     Doctrine\ORM\Tools\Console\ConsoleRunner;
 
-require_once __DIR__ . '/bootstrap.php';
+include __DIR__.'/../vendor/autoload.php';
+
+$appConfig = new \Arachnid\AppConfig();
 
 $helperSet = new HelperSet(array(
-    'em' => new EntityManagerHelper($em),
-    'conn' => new ConnectionHelper($em->getConnection())
+    'em' => new EntityManagerHelper($appConfig->getEntityManager()),
+    'conn' => new ConnectionHelper($appConfig->getEntityManager()->getConnection())
 ));
 
 ConsoleRunner::run($helperSet);

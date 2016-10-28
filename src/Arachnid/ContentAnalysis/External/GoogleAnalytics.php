@@ -15,18 +15,25 @@ class GoogleAnalytics implements BatchMetrics
 
     protected $aggregateUrlPrefixes;
 
-    public function __construct($tableId, $aggregateUrlPrefixes = []) {
+    public function __construct($options) {
+
+        $this->tableId = $options['table'];
+        $this->aggregateUrlPrefixes = $options['aggregatePrefixes'];
+        $this->maxResults = $options['maxResults'];
+
         $client = new \Google_Client();
         $client->setScopes(['https://www.googleapis.com/auth/analytics.readonly']);
         $client->setAuthConfigFile(__DIR__.'/../../../../conf/google-auth.json');
 
         $this->gaClient = new \Google_Service_Analytics($client);
-        $this->tableId = $tableId;
     }
 
+    public function getName()
+    {
+        return 'Google Analytics';
+    }
     public function getResults(){
 
-        $maxResults = 5000000;
         $optParams = array(
             'dimensions' => 'ga:pagePath',
             'max-results' => '10000',
@@ -53,8 +60,8 @@ class GoogleAnalytics implements BatchMetrics
         $pageSize = 10000;
         $resultRow = 1;
 
-        if ($totalResults > $maxResults){
-            $totalResults = $maxResults;
+        if ($totalResults > $this->maxResults){
+            $totalResults = $this->maxResults;
         }
 
         while($resultRow < $totalResults) {

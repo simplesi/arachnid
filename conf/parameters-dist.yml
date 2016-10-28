@@ -9,7 +9,7 @@ database:
   password: 'password'
   host: 'localhost'
   driver: 'pdo_sqlite'
-  path: '/data/db/database.db3'
+  path: '%base_dir%/data/db/database.db3'
   charset: 'utf8'
   driverOptions:
     1002: 'SET NAMES utf8'

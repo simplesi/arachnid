@@ -6,8 +6,8 @@ namespace Arachnid\ContentAnalysis;
 
 interface BatchMetrics
 {
-    /**
-     * @return BatchResults
-     */
     public function getResults();
+
+    public function getName();
 }
+
