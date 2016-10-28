@@ -8,7 +8,7 @@ $appConfig = new \Arachnid\AppConfig();
 
 $baseUrl = $argv[1];
 
-if (isset($argv[2]) > 1) {
+if (isset($argv[2])) {
     $depth = $argv[2];
 } else {
     $depth = 3;
