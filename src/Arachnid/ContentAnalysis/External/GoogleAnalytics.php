@@ -150,12 +150,16 @@ class GoogleAnalytics implements BatchMetrics
         {
             if (strpos($url, $prefix) !== FALSE )
             {
-                return $prefix.' (aggregated) ';
+                $url = $prefix.' (aggregated) ';
+                break;
             }
 
         }
 
-        return strtok($url, '?');
+        $url = strtok($url, '?');
+
+        // Make it a url, rather than a GA path, which begins /.
+        return 'https:/'.$url;
     }
 
     protected function fetchPageOfMetrics($tableId, $dateFrom, $dateTo, $optParams, $metrics, $resultFrom, $maxResults)

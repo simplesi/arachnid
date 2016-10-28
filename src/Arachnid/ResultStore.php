@@ -65,12 +65,20 @@ class ResultStore
         $this->recordForUrlArray($url, $payload);
     }
 
+    public function recordUrlRedirects($url, $redirectList)
+    {
+        $this->recordForUrl($url, 'redirects', $redirectList);
+    }
+
 
     public function markUrlComplete($url)
     {
         if ($this->longTermStore !== null)
         {
-            $this->longTermStore->writeToStore($url, $this->data[$url]);
+            $data = $this->data[$url];
+            $redirects = $data['redirects'];
+            unset($data['redirects']);
+            $this->longTermStore->writeToStore($url, $data, $redirects);
         }
 
         // TODO: clean up the local store?

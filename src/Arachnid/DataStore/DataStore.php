@@ -8,7 +8,7 @@ interface DataStore
 {
     public function init($crawlId, $knownColumns);
 
-    public function writeToStore($url, $data);
+    public function writeToStore($url, $data, $redirectUrls);
 
     public function close();
 }

@@ -26,9 +26,16 @@ class Page
     private $id;
 
     /**
-     * @ORM\Column(type="string", length=255)
+     * The final url for this page
+     * @ORM\OneToOne(targetEntity="Url")
      */
     protected $url;
+
+    /**
+     * @var ArrayCollection
+     * @ORM\OneToMany(targetEntity="Url", mappedBy="page")
+     */
+    protected $allUrls;
 
     /**
      * @ORM\OneToMany(targetEntity="Metric", mappedBy="page")
@@ -54,7 +61,7 @@ class Page
     protected $metadataMap = [];
 
 
-    public function __construct($url)
+    public function __construct(Url $url)
     {
         $this->url = $url;
         $this->metrics = new ArrayCollection();
@@ -148,7 +155,15 @@ class Page
     }
 
     /**
-     * @return mixed
+     * @return ArrayCollection
+     */
+    public function getAllUrls()
+    {
+        return $this->allUrls;
+    }
+
+    /**
+     * @return Url
      */
     public function getUrl()
     {
@@ -170,5 +185,4 @@ class Page
     {
         return $this->metadata;
     }
-
 }

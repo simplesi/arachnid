@@ -2,6 +2,7 @@
 
 namespace Arachnid;
 
+use Arachnid\Client\RecordingClient;
 use Arachnid\DataStore\DataStore;
 use Goutte\Client as GoutteClient;
 use GuzzleHttp\Exception\BadResponseException;
@@ -106,19 +107,23 @@ class Crawler
     protected function crawlSingle(UrlWithData $urlWithData)
     {
         $url = $urlWithData->getUrl();
+        $client = $this->getScrapClient();
 
         try {
-            $client = $this->getScrapClient();
+
             $crawler = $client->request('GET', $url);
+
+            $url = $crawler->getUri();
 
             $statusCode = $client->getResponse()->getStatus();
             $this->resultStore->recordForUrl($url, 'status_code', $statusCode);
+            $this->resultStore->recordUrlRedirects($url, $client->getRedirectList());
 
             if ($statusCode === 200) {
                 $content_type = $client->getResponse()->getHeader('Content-Type');
 
-                if (strpos($content_type,'text/html') !== false
-                ) { //traverse children in case the response in HTML document only
+                if (strpos($content_type,'text/html') !== false) {
+                    //traverse children in case the response in HTML document only
 
                     if ($this->shouldExtractLinksInUri($url)) {
                         $childLinks = $this->extractLinksInfo($crawler, $url);
@@ -135,6 +140,22 @@ class Crawler
 
         } catch (TooManyRedirectsException $e) {
             $this->resultStore->recordError($url, 'TooManyRedirects', $e->getMessage());
+
+            $redirectsSeen = [];
+            $trimmedRedirectList = [];
+
+            // Unique the redirects which are likely cyclic
+            foreach($client->getRedirectList() as $redirect)
+            {
+                list($status, $url) = $redirect;
+                if (!isset($redirectsSeen[$url]))
+                {
+                    // Flip the status so we can see it ends in an error
+                    $trimmedRedirectList[] = [ -1 * $status, $url];
+                }
+            }
+
+            $this->resultStore->recordUrlRedirects($url, $trimmedRedirectList);
         }
 
         $this->resultStore->markUrlComplete($url);
@@ -147,12 +168,13 @@ class Crawler
 
     /**
      * create and configure goutte client used for scraping
-     * @return GoutteClient
+     * @return RecordingClient
      */
     protected function getScrapClient()
     {
-        $client = new GoutteClient();
+        $client = new RecordingClient();
         $client->followRedirects();
+        $client->setMaxRedirects(30);
 
         $guzzleClient = new \GuzzleHttp\Client(array(
             'curl' => array(

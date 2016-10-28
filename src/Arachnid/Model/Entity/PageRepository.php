@@ -12,7 +12,7 @@ class PageRepository extends EntityRepository
      * @param $url
      * @return Page|null
      */
-    public function findOrCreateOneByUrl($url)
+    public function findOrCreateOneByUrl(Url $url)
     {
         $page = $this->findOneBy(['url' => $url]);
 
