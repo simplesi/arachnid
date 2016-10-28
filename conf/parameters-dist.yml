@@ -1,0 +1,19 @@
+locale: 'en_UK'
+
+site:
+  name: 'Crawler'
+
+database:
+  dbname: 'demodb'
+  user: 'root'
+  password: 'password'
+  host: 'localhost'
+  driver: 'pdo_sqlite'
+  path: '/data/db/database.db3'
+  charset: 'utf8'
+  driverOptions:
+    1002: 'SET NAMES utf8'
+
+google:
+  analytics:
+    table: 'ga:111111'
