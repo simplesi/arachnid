@@ -8,6 +8,7 @@ use Goutte\Client as GoutteClient;
 use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\TooManyRedirectsException;
+use LogicException;
 use Symfony\Component\DomCrawler\Crawler as DomCrawler;
 
 /**
@@ -138,24 +139,26 @@ class Crawler
         } catch (BadResponseException $e) {
             $this->resultStore->recordError($url, $e->getResponse()->getStatusCode(), $e->getMessage());
 
-        } catch (TooManyRedirectsException $e) {
-            $this->resultStore->recordError($url, 'TooManyRedirects', $e->getMessage());
+        } catch (LogicException $e) {
+            if (strpos($e->getMessage(), 'of redirections was reached')!== FALSE) {
+                $this->resultStore->recordError($url, 'TooManyRedirects', $e->getMessage());
 
-            $redirectsSeen = [];
-            $trimmedRedirectList = [];
+                $redirectsSeen = [];
+                $trimmedRedirectList = [];
 
-            // Unique the redirects which are likely cyclic
-            foreach($client->getRedirectList() as $redirect)
-            {
-                list($status, $url) = $redirect;
-                if (!isset($redirectsSeen[$url]))
-                {
-                    // Flip the status so we can see it ends in an error
-                    $trimmedRedirectList[] = [ -1 * $status, $url];
+                // Unique the redirects which are likely cyclic
+                foreach ($client->getRedirectList() as $redirect) {
+                    list($status, $url) = $redirect;
+                    if (!isset($redirectsSeen[$url])) {
+                        // Flip the status so we can see it ends in an error
+                        $trimmedRedirectList[] = [-1 * $status, $url];
+                    }
                 }
-            }
 
-            $this->resultStore->recordUrlRedirects($url, $trimmedRedirectList);
+                $this->resultStore->recordUrlRedirects($url, $trimmedRedirectList);
+            } else {
+                throw $e;
+            }
         }
 
         $this->resultStore->markUrlComplete($url);
