@@ -28,4 +28,5 @@ $crawler->crawl();
 
 // Get link data
 $links = $crawler->getLinks();
-print_r($links);
+echo "Crawled ".count($links). " pages\n";
+//print_r($links);
