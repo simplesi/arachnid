@@ -11,7 +11,10 @@ $appConfig = new \Arachnid\AppConfig();
 
 $helperSet = new HelperSet(array(
     'em' => new EntityManagerHelper($appConfig->getEntityManager()),
-    'conn' => new ConnectionHelper($appConfig->getEntityManager()->getConnection())
+    'conn' => new ConnectionHelper($appConfig->getEntityManager()->getConnection()),
+    'db' => new \Doctrine\DBAL\Tools\Console\Helper\ConnectionHelper(
+        $appConfig->getEntityManager()->getConnection()
+    )
 ));
 
 ConsoleRunner::run($helperSet);
