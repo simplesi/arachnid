@@ -7,7 +7,9 @@ use Arachnid\DataStore\DataStore;
 use Goutte\Client as GoutteClient;
 use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Exception\TooManyRedirectsException;
+use GuzzleHttp\Exception\TransferException;
 use LogicException;
 use Symfony\Component\DomCrawler\Crawler as DomCrawler;
 
@@ -74,7 +76,6 @@ class Crawler
             $this->urlStore->add($url, 1);
         }
 
-
         $this->analysers = $analysers;
 
         $this->resultStore = new ResultStore($dataStore, $this->crawlId, $this->getResultColumns());
@@ -123,7 +124,7 @@ class Crawler
             if ($statusCode === 200) {
                 $content_type = $client->getResponse()->getHeader('Content-Type');
 
-                if (strpos($content_type,'text/html') !== false) {
+                if (strpos($content_type, 'text/html') !== false) {
                     //traverse children in case the response in HTML document only
 
                     if ($this->shouldExtractLinksInUri($url)) {
@@ -139,7 +140,13 @@ class Crawler
         } catch (BadResponseException $e) {
             $this->resultStore->recordError($url, $e->getResponse()->getStatusCode(), $e->getMessage());
 
-        } catch (LogicException $e) {
+        } catch (RequestException $e) {
+            $this->resultStore->recordError($url, 'RequestException', $e->getMessage());
+
+        } catch (TransferException $e) {
+            $this->resultStore->recordError($url, 'TransferException', $e->getMessage());
+
+        }catch (LogicException $e) {
             if (strpos($e->getMessage(), 'of redirections was reached')!== FALSE) {
                 $this->resultStore->recordError($url, 'TooManyRedirects', $e->getMessage());
 

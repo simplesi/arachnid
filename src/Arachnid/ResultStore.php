@@ -76,8 +76,13 @@ class ResultStore
         if ($this->longTermStore !== null)
         {
             $data = $this->data[$url];
-            $redirects = $data['redirects'];
-            unset($data['redirects']);
+            if (isset($data['redirects'])) {
+                $redirects = $data['redirects'];
+                unset($data['redirects']);
+            } else {
+                $redirects = [];
+            }
+
             $this->longTermStore->writeToStore($url, $data, $redirects);
         }
 
