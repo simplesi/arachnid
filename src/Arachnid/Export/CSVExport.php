@@ -29,9 +29,8 @@ class CSVExport
 
         foreach(['metrics', 'metadata'] as $type) {
             $stmt = $this->em->getConnection()->query("select distinct type from $type");
-            $cols = $stmt->fetchAll();
 
-            foreach ($cols as $col) {
+            while($col = $stmt->fetch()) {
                 if (!array_key_exists($col['type'], $reportColumns))
                 {
                     $reportColumns[$col['type']] = count($reportColumns) + 1;
