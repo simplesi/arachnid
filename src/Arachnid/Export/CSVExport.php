@@ -21,13 +21,44 @@ class CSVExport
         $this->urlRepository = $em->getRepository('\Arachnid\Model\Entity\Url');
     }
 
+    protected function getColumnNames()
+    {
+        $reportColumns = ['id' => 0,'url' => 1, 'status_code' => 2, 'redirect_urls' => 3];
+
+        // Get distinct columns
+
+        foreach(['metrics', 'metadata'] as $type) {
+            $stmt = $this->em->getConnection()->query("select distinct type from $type");
+            $cols = $stmt->fetchAll();
+
+            foreach ($cols as $col) {
+                if (!array_key_exists($col['type'], $reportColumns))
+                {
+                    $reportColumns[$col['type']] = count($reportColumns) + 1;
+                }
+            }
+        }
+        // Get the ordered list of report columns
+        $reportColumnsOrdered = array_flip($reportColumns);
+
+        return $reportColumnsOrdered;
+    }
+
     public function getReport()
     {
         $reportData = [];
-        $reportColumns = ['id' => 0,'url' => 1, 'status_code' => 2, 'redirect_urls' => 3];
-        $pages = $this->pageRepository->findBy([],['id' => 'ASC']);
-        foreach($pages as $page)
-        {
+
+        $reportColumns = $this->getColumnNames();
+
+        // Now export to csv once we know the distinct set of columns
+        $filename = tempnam(sys_get_temp_dir(),'crawl-export-');
+        $fp = fopen($filename, 'w');
+        fputcsv($fp, $reportColumns);
+
+        $q = $this->em->createQuery('select p from \Arachnid\Model\Entity\Page p order by p.id');
+        $iterableResult = $q->iterate();
+        foreach ($iterableResult as $pageArray) {
+            $page = $pageArray[0];
             $pageData=[];
             $url = $page->getUrl();
             $pageData['id'] = $page->getId();
@@ -44,39 +75,25 @@ class CSVExport
                         $urlStrings[] = $url->getUrl();
                     }
                 }
-
                 $pageData['redirect_urls'] = implode(' ', $urlStrings);
             }
 
             foreach($page->getMetadata() as $metadata)
             {
                 $pageData[$metadata->getType()] = $metadata->getValue();
-                if (!isset($reportColumns[$metadata->getType()])) $reportColumns[$metadata->getType()] = count($reportColumns) + 1;
             }
 
             foreach($page->getMetrics() as $metric)
             {
                 $pageData[$metric->getType()] = $metric->getValue();
-                if (!isset($reportColumns[$metric->getType()])) $reportColumns[$metric->getType()] = count($reportColumns) + 1;
             }
-            $reportData[] = $pageData;
-        }
 
-        // Get the ordered list of report columns
-        $reportColumnsOrdered = array_flip($reportColumns);
-
-        // Now export to csv once we know the distinct set of columns
-        $filename = tempnam(sys_get_temp_dir(),'crawl-export-');
-        $fp = fopen($filename, 'w');
-        fputcsv($fp, $reportColumnsOrdered);
-        foreach($reportData as $rowData)
-        {
             $row = [];
-            foreach($reportColumnsOrdered as $column)
+            foreach($reportColumns as $column)
             {
-                if (isset($rowData[$column]))
+                if (isset($pageData[$column]))
                 {
-                    $row[] = $rowData[$column];
+                    $row[] = $pageData[$column];
                 } else {
                     $row[] = null;
                 }
