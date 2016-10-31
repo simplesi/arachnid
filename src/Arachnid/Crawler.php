@@ -64,7 +64,7 @@ class Crawler
      * @param int    $maxDepth
      * @param DataStore $dataStore
      */
-    public function __construct(array $initialUrls, $baseUrl, $maxDepth = 3, $dataStore = null, $analysers = [])
+    public function __construct(array $initialUrls, $baseUrl = '', $maxDepth = 3, $dataStore = null, $analysers = [])
     {
         // Generate an ID for this crawl
         $date = new \DateTime();
@@ -115,6 +115,8 @@ class Crawler
 
             $crawler = $client->request('GET', $url);
 
+            // TODO: Use canonical url if available?
+
             $url = $crawler->getUri();
 
             $statusCode = $client->getResponse()->getStatus();
@@ -144,7 +146,7 @@ class Crawler
             $this->resultStore->recordError($url, 'RequestException', $e->getMessage());
 
         } catch (TransferException $e) {
-            $this->resultStore->recordError($url, 'TransferException', $e->getMessage());
+            $this->resultStore->recordError($url, 'RequestException', $e->getMessage());
 
         }catch (LogicException $e) {
             if (strpos($e->getMessage(), 'of redirections was reached')!== FALSE) {
@@ -164,8 +166,11 @@ class Crawler
 
                 $this->resultStore->recordUrlRedirects($url, $trimmedRedirectList);
             } else {
-                throw $e;
+                $this->resultStore->recordError($url, 'LogicException', $e->getMessage());
             }
+        } catch(\Exception $e)
+        {
+            $this->resultStore->recordError($url, 'Exception', $e->getMessage());
         }
 
         $this->resultStore->markUrlComplete($url);

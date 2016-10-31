@@ -1,13 +1,14 @@
 <?php
 
 
-namespace Arachnid\Test;
+namespace Arachnid\Test\ContentAnalysis\OnPage;
 
+use Arachnid\Test\BaseTestCase;
 use Arachnid\ContentAnalysis\OnPage\ContentCounts;
-use PHPUnit\Framework\TestCase;
 use Symfony\Component\DomCrawler\Crawler;
 
-class ContentsCountTest extends TestCase
+
+class ContentsCountTest extends \PHPUnit_Framework_TestCase
 {
     public function testExtract()
     {

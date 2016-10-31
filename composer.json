@@ -21,13 +21,17 @@
         "davechild/textstatistics": "1.*",
         "google/apiclient": "^2.0",
         "doctrine/dbal": "2.5.*",
-        "doctrine/orm": "2.5.*"
+        "doctrine/orm": "2.5.*",
+        "seostats/seostats": "dev-master"
     },
     "require-dev": {
         "phpunit/phpunit": "4.8.*"
     },
     "autoload": {
-        "psr-0": { "Arachnid": "src" }
+        "psr-0": {
+            "Arachnid": "src",
+            "Arachnid\\Test": "tests\\Arachnid"
+        }
     },
     "config": {
         "platform": {

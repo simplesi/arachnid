@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "13bcb5a3ce1def81229954b21311b81a",
-    "content-hash": "e5829150f082e54cc390288a8e812a35",
+    "hash": "3bf4039a38f6a2aabeab02dd0db3c04b",
+    "content-hash": "a354840af2210b62db381882bdf4b958",
     "packages": [
         {
             "name": "davechild/textstatistics",
@@ -128,16 +128,16 @@
         },
         {
             "name": "doctrine/cache",
-            "version": "v1.6.0",
+            "version": "v1.6.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/cache.git",
-                "reference": "f8af318d14bdb0eff0336795b428b547bd39ccb6"
+                "reference": "b6f544a20f4807e81f7044d31e679ccbb1866dc3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/cache/zipball/f8af318d14bdb0eff0336795b428b547bd39ccb6",
-                "reference": "f8af318d14bdb0eff0336795b428b547bd39ccb6",
+                "url": "https://api.github.com/repos/doctrine/cache/zipball/b6f544a20f4807e81f7044d31e679ccbb1866dc3",
+                "reference": "b6f544a20f4807e81f7044d31e679ccbb1866dc3",
                 "shasum": ""
             },
             "require": {
@@ -194,7 +194,7 @@
                 "cache",
                 "caching"
             ],
-            "time": "2015-12-31 16:37:02"
+            "time": "2016-10-29 11:16:17"
         },
         {
             "name": "doctrine/collections",
@@ -1375,6 +1375,81 @@
             "time": "2016-10-10 12:19:37"
         },
         {
+            "name": "seostats/seostats",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/eyecatchup/SEOstats.git",
+                "reference": "bd3117f3ee10d6bf3c3cadd0461c15b91b15428b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/eyecatchup/SEOstats/zipball/bd3117f3ee10d6bf3c3cadd0461c15b91b15428b",
+                "reference": "bd3117f3ee10d6bf3c3cadd0461c15b91b15428b",
+                "shasum": ""
+            },
+            "require": {
+                "ext-curl": "*",
+                "ext-json": "*",
+                "php": ">=5.3",
+                "vlucas/phpdotenv": "*"
+            },
+            "require-dev": {
+                "composer/composer": "1.0.*@dev",
+                "phpunit/phpunit": ">=3.7,<4",
+                "scrutinizer/ocular": "~1",
+                "squizlabs/php_codesniffer": "~1"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "2.5-dev"
+                }
+            },
+            "autoload": {
+                "psr-0": {
+                    "SEOstats\\": ""
+                },
+                "classmap": [
+                    "SEOstats/Services/3rdparty"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Stephan Schmitz",
+                    "email": "eyecatchup@gmail.com",
+                    "homepage": "https://github.com/eyecatchup",
+                    "role": "Creator, Developer, Maintainer"
+                },
+                {
+                    "name": "SEOstats Community",
+                    "homepage": "https://github.com/eyecatchup/seostats/contributors",
+                    "role": "Contributor, Developer"
+                }
+            ],
+            "description": "SEOstats is a powerful open source PHP library to request a bunch of SEO relevant metrics for any website.",
+            "homepage": "http://github.com/eyecatchup/SEOstats",
+            "keywords": [
+                "Alexa",
+                "Backlinks",
+                "Mozscape",
+                "Open Site Explorer",
+                "Pagerank",
+                "SEMRush",
+                "SEO-Stats",
+                "SEOStats",
+                "Sistrix",
+                "google",
+                "seo",
+                "seomoz"
+            ],
+            "time": "2016-07-15 22:52:15"
+        },
+        {
             "name": "symfony/browser-kit",
             "version": "v3.1.6",
             "source": {
@@ -1716,6 +1791,56 @@
                 "shim"
             ],
             "time": "2016-05-18 14:26:46"
+        },
+        {
+            "name": "vlucas/phpdotenv",
+            "version": "v2.4.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/vlucas/phpdotenv.git",
+                "reference": "3cc116adbe4b11be5ec557bf1d24dc5e3a21d18c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/vlucas/phpdotenv/zipball/3cc116adbe4b11be5ec557bf1d24dc5e3a21d18c",
+                "reference": "3cc116adbe4b11be5ec557bf1d24dc5e3a21d18c",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.9"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^4.8 || ^5.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "2.4-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Dotenv\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause-Attribution"
+            ],
+            "authors": [
+                {
+                    "name": "Vance Lucas",
+                    "email": "vance@vancelucas.com",
+                    "homepage": "http://www.vancelucas.com"
+                }
+            ],
+            "description": "Loads environment variables from `.env` to `getenv()`, `$_ENV` and `$_SERVER` automagically.",
+            "keywords": [
+                "dotenv",
+                "env",
+                "environment"
+            ],
+            "time": "2016-09-01 10:05:43"
         }
     ],
     "packages-dev": [
@@ -2772,7 +2897,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "seostats/seostats": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {

@@ -40,6 +40,21 @@ class ExtractHtmlMetadata extends ContentAnalyser
 
         });
 
+        $content->filterXPath('//head//link')->each(function (Crawler $node) use (&$data) {
+            switch ($node->attr('rel')) {
+                case 'canonical':
+                    $data['url.canonical'] = $node->attr('href');
+                    break;
+                case 'shortlink':
+                    // Pull the node id out of the shortlink, if available
+                    $link = $node->attr('href');
+                    if (strpos($link, 'https://www.foe.co.uk/node/') !== false) {
+                        $data['node_id'] = substr($link, 27);
+                    }
+                    break;
+            }
+        });
+
         $html = $content->html();
 
         if (!isset($data['generator'])) {

@@ -1,13 +1,13 @@
 <?php
 
 
-namespace Arachnid\Test;
+namespace Arachnid\Test\ContentAnalysis\OnPage;
 
+use Arachnid\Test\BaseTestCase;
 use Arachnid\ContentAnalysis\OnPage\TextAnalysis;
-use PHPUnit\Framework\TestCase;
 use Symfony\Component\DomCrawler\Crawler;
 
-class TextAnalysisTest extends TestCase
+class TextAnalysisTest extends \PHPUnit_Framework_TestCase
 {
     public function testExtract()
     {

@@ -1,13 +1,13 @@
 <?php
 
 
-namespace Arachnid\Test;
+namespace Arachnid\Test\ContentAnalysis\OnPage;
 
+use Arachnid\Test\BaseTestCase;
 use Arachnid\ContentAnalysis\OnPage\ExtractHtmlMetadata;
-use PHPUnit\Framework\TestCase;
 use Symfony\Component\DomCrawler\Crawler;
 
-class ExtractHtmlMetadataTest extends TestCase
+class ExtractHtmlMetadataTest extends \PHPUnit_Framework_TestCase
 {
     public function testExtract()
     {
@@ -20,6 +20,8 @@ class ExtractHtmlMetadataTest extends TestCase
         $this->assertEquals('Drupal 7 (http://drupal.org)', $results['generator']);
         $this->assertEquals('anna.baum', $results['creator']);
         $this->assertEquals('2016-10-21', $results['date']);
+        $this->assertEquals('https://www.foe.co.uk/blog/barclays-don-t-frack-my-home', $results['url.canonical']);
+        $this->assertEquals('101939', $results['node_id']);
 
         $results = $testClass->analyse($this->getCrawler('sampleOldPressRelease.html'),'testUrl');
 
