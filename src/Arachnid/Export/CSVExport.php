@@ -70,13 +70,13 @@ class CSVExport
             $allUrls = $page->getAllUrls();
             if (count($allUrls)) {
                 $urlStrings = [];
-                foreach($allUrls as $url)
+                foreach($allUrls as $redirectUrl)
                 {
                     // Filter out urls which are the same as the eventual page url
-                    if ($url->getUrl() != $pageData['url']) {
-                        $urlStrings[] = $url->getUrl();
+                    if ($redirectUrl->getUrl() != $pageData['url']) {
+                        $urlStrings[] = $redirectUrl->getUrl();
                     }
-                    $this->em->detach($url);
+                    $this->em->detach($redirectUrl);
                 }
                 $pageData['redirect_urls'] = implode(' ', $urlStrings);
             }
