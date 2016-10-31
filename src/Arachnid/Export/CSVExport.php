@@ -76,6 +76,7 @@ class CSVExport
                     if ($url->getUrl() != $pageData['url']) {
                         $urlStrings[] = $url->getUrl();
                     }
+                    $this->em->detach($url);
                 }
                 $pageData['redirect_urls'] = implode(' ', $urlStrings);
             }
@@ -83,11 +84,13 @@ class CSVExport
             foreach($page->getMetadata() as $metadata)
             {
                 $pageData[$metadata->getType()] = $metadata->getValue();
+                $this->em->detach($metadata);
             }
 
             foreach($page->getMetrics() as $metric)
             {
                 $pageData[$metric->getType()] = $metric->getValue();
+                $this->em->detach($metric);
             }
 
             $row = [];
@@ -104,6 +107,8 @@ class CSVExport
 
             // Clean up memory
             $this->em->detach($page);
+            $this->em->detach($url);
+
         }
 
         fclose($fp);
