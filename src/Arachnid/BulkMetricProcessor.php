@@ -5,6 +5,7 @@ namespace Arachnid;
 
 
 use Arachnid\Model\Entity\PageRepository;
+use Arachnid\Model\Entity\UrlRepository;
 use Doctrine\ORM\EntityManager;
 
 class BulkMetricProcessor
@@ -24,11 +25,17 @@ class BulkMetricProcessor
      */
     protected $pageRepository;
 
+    /**
+     * @var UrlRepository
+     */
+    protected $urlRepository;
+
     public function __construct($batchProviders, EntityManager $em)
     {
         $this->em = $em;
         $this->batchProviders = $batchProviders;
         $this->pageRepository = $em->getRepository('\Arachnid\Model\Entity\Page');
+        $this->urlRepository = $em->getRepository('\Arachnid\Model\Entity\Url');
     }
 
     public function process()
@@ -41,7 +48,8 @@ class BulkMetricProcessor
             foreach($results as $url => $metrics)
             {
                 $count++;
-                $page = $this->pageRepository->findOrCreateOneByUrl($url);
+                $urlObject = $this->urlRepository->findOrCreateOne($url);
+                $page = $this->pageRepository->findOrCreateOneByUrl($urlObject);
 
                 $page->addMetrics($metrics, $this->em);
 
