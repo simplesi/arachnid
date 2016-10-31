@@ -44,6 +44,10 @@ class CSVExport
         return $reportColumnsOrdered;
     }
 
+    /**
+     * Returns the filename of the report
+     * @return string
+     */
     public function getReport()
     {
         $reportData = [];
@@ -103,9 +107,6 @@ class CSVExport
 
         fclose($fp);
 
-        $reportString =  file_get_contents($filename);
-        unlink($filename);
-
-        return $reportString;
+        return $filename;
     }
 }
