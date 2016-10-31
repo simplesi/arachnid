@@ -103,7 +103,7 @@ class CSVExport
             fputcsv($fp, $row);
 
             // Clean up memory
-            $this->_em->detach($page);
+            $this->em->detach($page);
         }
 
         fclose($fp);
