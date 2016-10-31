@@ -65,7 +65,9 @@ class ORMDataStore implements DataStore
             {
                 $metadata[$key] = $value;
             } else {
-                throw new \InvalidArgumentException("Unsupported data type: ".gettype($value));
+                if ($value != null ) {
+                    throw new \InvalidArgumentException("Unsupported data type: " . gettype($value));
+                }
             }
         }
 

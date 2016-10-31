@@ -50,8 +50,6 @@ class CSVExport
      */
     public function getReport()
     {
-        $reportData = [];
-
         $reportColumns = $this->getColumnNames();
 
         // Now export to csv once we know the distinct set of columns
@@ -61,8 +59,8 @@ class CSVExport
 
         $q = $this->em->createQuery('select p from \Arachnid\Model\Entity\Page p order by p.id');
         $iterableResult = $q->iterate();
-        foreach ($iterableResult as $pageArray) {
-            $page = $pageArray[0];
+        foreach ($iterableResult as $pageRow) {
+            $page = $pageRow[0];
             $pageData=[];
             $url = $page->getUrl();
             $pageData['id'] = $page->getId();
@@ -103,6 +101,9 @@ class CSVExport
                 }
             }
             fputcsv($fp, $row);
+
+            // Clean up memory
+            $this->_em->detach($page);
         }
 
         fclose($fp);
