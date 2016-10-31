@@ -26,6 +26,7 @@ class Page
     private $id;
 
     /**
+     * @var Url
      * The final url for this page
      * @ORM\OneToOne(targetEntity="Url")
      */
@@ -184,5 +185,13 @@ class Page
     public function getMetadata()
     {
         return $this->metadata;
+    }
+
+    /**
+     * @return int
+     */
+    public function getId()
+    {
+        return $this->id;
     }
 }
