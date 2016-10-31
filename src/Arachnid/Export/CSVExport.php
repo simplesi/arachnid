@@ -14,11 +14,14 @@ class CSVExport
      */
     protected $pageRepository;
 
-    public function __construct(EntityManager $em)
+    protected $csvExportPath;
+
+    public function __construct(EntityManager $em, $csvExportPath)
     {
         $this->em = $em;
         $this->pageRepository = $em->getRepository('\Arachnid\Model\Entity\Page');
         $this->urlRepository = $em->getRepository('\Arachnid\Model\Entity\Url');
+        $this->csvExportPath = $csvExportPath;
     }
 
     protected function getColumnNames()
@@ -47,13 +50,12 @@ class CSVExport
      * Returns the filename of the report
      * @return string
      */
-    public function getReport()
+    public function buildReport()
     {
         $reportColumns = $this->getColumnNames();
 
         // Now export to csv once we know the distinct set of columns
-        $filename = tempnam(sys_get_temp_dir(),'crawl-export-');
-        $fp = fopen($filename, 'w');
+        $fp = fopen($this->csvExportPath, 'w');
         fputcsv($fp, $reportColumns);
 
         $q = $this->em->createQuery('select p from \Arachnid\Model\Entity\Page p order by p.id');
@@ -111,7 +113,5 @@ class CSVExport
         }
 
         fclose($fp);
-
-        return $filename;
     }
 }
