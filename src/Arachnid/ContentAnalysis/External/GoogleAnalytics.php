@@ -159,7 +159,7 @@ class GoogleAnalytics implements BatchMetrics
         $url = strtok($url, '?');
 
         // Make it a url, rather than a GA path, which begins /.
-        return 'https:/'.$url;
+        return 'https://www.foe.co.uk'.$url;
     }
 
     protected function fetchPageOfMetrics($tableId, $dateFrom, $dateTo, $optParams, $metrics, $resultFrom, $maxResults)
